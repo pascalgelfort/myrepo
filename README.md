@@ -1,5 +1,3 @@
 # myrepo
-test
-A line I wrote on my local computer
-another line I wrote
-and another one 
+pretest_analysis beinhaltet Datenaufbereitung
+pretest_analysis2 beinhaltet Auswertung
