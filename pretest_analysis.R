@@ -11,6 +11,7 @@ library(nlme)
 library(performance)
 library(lattice)
 library(see)
+library(cluster)
 #### Legende ####
 # be/st/ch/vis am Ende von dataframes etc stehen f?r belief/status/choice of membership/visibility
 # mask/gen am Ende von dataframes etc stehen f?r generisches Maskulin/gendersternchen
