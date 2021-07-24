@@ -1,4 +1,3 @@
-setwd("C:/Users/pasca/Desktop/MASTERARBEIT/githubtest/myrepo")
 load(file = "pretest23062021.Rda")
 
 #### Packages ####

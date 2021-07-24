@@ -1,4 +1,3 @@
-setwd("C:/Users/pasca/Desktop/MASTERARBEIT/Study_R")
 load(file = "DataStudy23072021.Rda")
 
 #### Packages ####
@@ -14,6 +13,7 @@ library(see)
 library(cluster)
 library(ggplot2)
 library(careless)
+library(car)
 
 ###############################################################
 ################## Datenaufbereitung ##########################
@@ -106,46 +106,3 @@ colnames(longdat)<-c("ID","order","age","gender","education","ideology",
 longdim<-spread(longdat,cond,rating)
 by(longdim$norm,longdim$targetnames,describe,na.rm=T)
 by(longdim$prej,longdim$targetnames,describe,na.rm=T)
-
-#TEST
-testmod <- lmer(prej ~   (1|targetnames) + (1|ID),REML =FALSE,data = longdim)
-summary(testmod)
-dotplot(ranef(testmod))
-
-testmod2<-lmer(norm ~  (1|targetnames) + (1|ID),REML =FALSE,data = longdim)
-dotplot(ranef(testmod2))
-
-testmod3<-lmer(longdim$norm ~ longdim$prej ,REML =FALSE,data = longdim)
-
-
-
-longdatmeannorm<-subset(longdat,longdat$cond=="norm")
-longdatmeanprej<-subset(longdat,longdat$cond=="prej")
-means<-matrix(NA,58,2)
-meansnorm<-by(longdatmeannorm$rating,longdatmeannorm$targetnames,mean,na.rm=T)
-means[,1]<-as.vector(meansnorm)
-meansprej<-by(longdatmeangen$rating,longdatmeanprej$targetnames,mean,na.rm=T)
-means[,2]<-as.vector(meansprej)
-means<-as.data.frame(means)
-condcormeans<-corr.test(means$V1,means$V2)
-condcormeans$ci
-
-m1<-lm(means$V2~means$V1)
-plot(means$V2,means$V1)
-abline(m1)
-library(car)
-avPlots(m1)
-
-means$V2<-scale(means$V2)
-means$V1<-scale(means$V1)
-m1<-lm(means$V2~means$V1)
-avPlots(m1)
-mean(means$V1)
-mean(means$V2)
-m1
-summary(m1)
-
-m2<-lm(longdim$RWA~longdim$norm)
-summary(m2)
-avPlots(m2)
-
