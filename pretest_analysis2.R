@@ -46,8 +46,18 @@ longcormask[11369:12528,1:12]<-NA
 longcorgen<- subset(longdat, longdat$grammarcond==1)
 gendercor<-corr.test(longcorgen$rating,longcormask$rating, use = "complete.obs")
 gendercor$ci
+#Korrelation der Mittelwerte ?ber alle Dimensionen pro Target
+longdatmeanmask<-subset(longdat,longdat$grammarcond==0)
+longdatmeangen<-subset(longdat,longdat$grammarcond==1)
+means<-matrix(NA,232,2)
+meansmask<-by(longdatmeanmask$rating,list(longdatmeanmask$targetnames,longdatmeanmask$dimension),mean,na.rm=T)
+means[,1]<-as.vector(meansmask)
+meansgen<-by(longdatmeangen$rating,list(longdatmeangen$targetnames,longdatmeangen$dimension),mean,na.rm=T)
+means[,2]<-as.vector(meansgen)
+means<-as.data.frame(means)
+gendercormeans<-corr.test(means$V1,means$V2)
+gendercormeans$ci
 #t test
-gramttest<-pairwise.t.test(longdat$rating,longdat$grammarcond)
 #loop
 n <- 239
 ttests<-matrix(NA,239,1)
