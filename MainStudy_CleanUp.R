@@ -1,4 +1,4 @@
-load(file = "DataStudy23072021.Rda")
+load(file = "DataStudy29072021.Rda")
 
 #### Packages ####
 library(psych)
@@ -14,13 +14,14 @@ library(cluster)
 library(ggplot2)
 library(careless)
 library(car)
-
+library(dplyr)
+library(multilevel)
 ###############################################################
 ################## Datenaufbereitung ##########################
 ###############################################################
 
 a<-a[c(8:274,296)]
-a$ID<-c(1:118)
+a$ID<-c(1:183)
 describe(a$DE02_01)
 
 norms<-a[11:126]
@@ -76,6 +77,10 @@ a$conSDO<-ifelse(a$conSDO==-9,NA,a$conSDO)
 a$SDO<-((a$conSDO+a$proSDO)/2)
 hist(a$SDO)
 describe(a$SDO)
+#Entfernen von ungründlichen Datensätzen
+a<-subset(a,a$TIME_RSI<2)
+a$careless<-longstring(a)
+a<-subset(a,a$careless<27)
 #####Reverse Norm Scale ####
 a[11:68]<-(6-a[11:68])
 a[69:126]<-(6-a[69:126])
@@ -92,8 +97,8 @@ longdatgen<-gather(longdatgen,"target","rating",NO02_01:PR02_58)
 longdatgen<-subset(longdatgen,rating!="NA")
 longdat<-rbind(longdatmask,longdatgen)
 longdat<-longdat[order(longdat$`a$ID`),]
-#ANZAHl VPN KORRIGIEREN
-longdat$targetnames<-rep(targetdiff$target,1*58)
+
+longdat$targetnames<-rep(targetdiff$target,1*nrow(a))
 longdat$cond<-ifelse(longdat$`a$FU03`<=2,"norm","prej")
 longdat$grammarcond<-ifelse(longdat$`a$FU03` %in% c(2,4),"gen","mask")
 colnames(longdat)<-c("ID","order","age","gender","education","ideology",
@@ -106,3 +111,32 @@ colnames(longdat)<-c("ID","order","age","gender","education","ideology",
 longdim<-spread(longdat,cond,rating)
 by(longdim$norm,longdim$targetnames,describe,na.rm=T)
 by(longdim$prej,longdim$targetnames,describe,na.rm=T)
+
+
+#### Clean Up für Person-population correlation/Item Total Correlation ####
+#Für Normen
+#58 Zeilen für je ein Target, Spalten pro ID
+ppcdatnorm<-longdim[,c(1,16,18)]
+ppcdatnorm<-subset(ppcdatnorm,ppcdatnorm$norm!="NA")
+ppcdatnorm<-pivot_wider(ppcdatnorm,id_cols = targetnames,names_from = ID,values_from = norm)
+row.names(ppcdatnorm)<-targetdiff$target
+ppcdatnorm<-ppcdatnorm[,-1]
+#Für Vorurteile
+ppcdatprej<-longdim[,c(1,16,19)]
+ppcdatprej<-subset(ppcdatprej,ppcdatprej$prej!="NA")
+ppcdatprej<-pivot_wider(ppcdatprej,id_cols = targetnames,names_from = ID,values_from = prej)
+ppcdatprej<-ppcdatprej[,-1]
+row.names(ppcdatprej)<-targetdiff$target
+
+
+normpersonpopulation<-item.total(ppcdatnorm)
+plot(normpersonpopulation$Item.Total)
+plot(density(normpersonpopulation$Item.Total,na.rm = T))
+
+
+median(normpersonpopulation$Item.Total,na.rm=T)
+median(prejpersonpopulation$Item.Total,na.rm=T)
+prejpersonpopulation<-item.total(ppcdatprej)
+hist(prejpersonpopulation$Item.Total)
+plot(density(prejpersonpopulation$Item.Total))
+
