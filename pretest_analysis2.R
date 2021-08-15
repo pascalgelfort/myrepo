@@ -1,7 +1,19 @@
 ###############################################################
 ######################## Analysen #############################
 ###############################################################
-
+#### Packages ####
+library(psych)
+library(tidyr)
+library(readxl)
+library(lme4) 
+library(lmerTest)
+library(nlme)
+library(performance)
+library(lattice)
+library(see)
+library(cluster)
+library(gapminder)
+library(ggplot2)
 ####Stichprobenbeschreibung####
 #Alter
 describe(d$DE02_01)
@@ -16,22 +28,23 @@ describe(d$DE05_01)
 
 #### Grammar Condition ####
 #Korrelation
-longcormask<-subset(longdat, longdat$grammarcond==0)
-longcormask[11369:12528,1:12]<-NA
+
 longcorgen<- subset(longdat, longdat$grammarcond==1)
+longcormask<-subset(longdat, longdat$grammarcond==0)
+longcormask[(nrow(longcormask)+1):nrow(longcorgen),1:12]<-NA
 gendercor<-corr.test(longcorgen$rating,longcormask$rating, use = "complete.obs")
 gendercor$ci
-#Korrelation der Mittelwerte ?ber alle Dimensionen pro Target
+#Korrelation der Mittelwerte pro Target
 longdatmeanmask<-subset(longdat,longdat$grammarcond==0)
 longdatmeangen<-subset(longdat,longdat$grammarcond==1)
-means<-matrix(NA,232,2)
-meansmask<-by(longdatmeanmask$rating,list(longdatmeanmask$targetnames,longdatmeanmask$dimension),mean,na.rm=T)
-means[,1]<-as.vector(meansmask)
-meansgen<-by(longdatmeangen$rating,list(longdatmeangen$targetnames,longdatmeangen$dimension),mean,na.rm=T)
+meanstarget<-matrix(NA,232,2)
+meanstargetmask<-by(longdatmeanmask$rating,longdatmeanmask$targetnames,mean,na.rm=T)
+meanstarget[,1]<-as.vector(meanstargetmask)
+meanstargetgen<-by(longdatmeangen$rating,longdatmeangen$targetnames,mean,na.rm=T)
 means[,2]<-as.vector(meansgen)
-means<-as.data.frame(means)
-gendercormeans<-corr.test(means$V1,means$V2)
-gendercormeans$ci
+gendercortargetmeans<-corr.test(means$V1,means$V2)
+gendercortargetmeans$ci
+#Korrelation der TargetMW 0.97
 #t test
 #loop
 n <- 239
@@ -48,7 +61,7 @@ ttests<-ttests[8:239,1:3]
 table(ttests$sig)
 
 
-#### Deskriptive Daten pro Dimension und Targetgroup
+#### Deskriptive Daten pro Dimension und Targetgroup ####
 #Belief
 descbe<-by(longdim$belief,longdim$targetnames,describe)
 descbe<- as.data.frame(do.call(rbind,descbe))
@@ -70,8 +83,6 @@ corideobe<-corr.test(widedat[,c(5,8:65)])
 corideost<-corr.test(widedat[,c(5,66:123)])
 corideovch<-corr.test(widedat[,c(5,124:181)])
 corideovis<-corr.test(widedat[,c(5,182:239)])
-
-####
 
 
 #### Zero Models ####
@@ -116,7 +127,37 @@ clusterdatvisibility<-by(clusterdat$visibility,clusterdat$targetnames,mean)
 clusterdat<-as.data.frame(cbind(clusterdatbelief,clusterdatchoice,clusterdatstatus,clusterdatvisibility))
 ward <- agnes(clusterdat, metric = "euclidean", stand = TRUE, method = "ward")
 summary(ward)
-pltree(ward, main = "Dendrogramm Ward-Methode")
+plot(ward)
 table(cutree(ward, 3),targetdiff$target)
 
+pltree(ward2, main = "Dendrogramm Ward-Methode")
+table(cutree(ward, 3),targetdiff$target)
+cutree(ward,3)
+
+ward_QS <- sort(ward$height)
+plot(ward_QS, type = "b", xlab = "Number of Clusters", ylab = "Distanz")
+
+#### Variablen für Hauptstudie ####
+
+####MW der Dimensionen pro Target zusammenfassen und z-Standardisieren (z.B. für ideological conflict)
+targetfeat<-matrix(NA,58,4)
+targetfeat[,1:4]<-c(descbe$mean,descst$mean,descch$mean,descvis$mean)
+row.names(targetfeat)<-targetdiff$target
+colnames(targetfeat)<-c("Belief","Status","Choice","Visibility")
+targetfeat<-as.data.frame(targetfeat)
+targetfeat$zBelief<-scale(targetfeat$Belief)
+targetfeat$zStatus<-scale(targetfeat$Status)
+targetfeat$zChoice<-scale(targetfeat$Choice)
+targetfeat$zVisibility<-scale(targetfeat$Visibility)
+
+
+####Clusterlösungen
+targetfeat$cluster<-cutree(ward,3)
+
+by(targetfeat$Belief,targetfeat$cluster,sd)
+by(targetfeat$Status,targetfeat$cluster,sd)
+by(targetfeat$Choice,targetfeat$cluster,sd)
+by(targetfeat$Visibility,targetfeat$cluster,sd)
+
+save(targetfeat,file = "TargetFeatures.Rda") 
 

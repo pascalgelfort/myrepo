@@ -141,3 +141,4 @@ widedat<-cbind(widedat$ID,widedatdemographics[,2:7],widedat[2:233])
 longdat$rating<-ifelse(longdat$rating==-9,NA,longdat$rating)
 
 
+
