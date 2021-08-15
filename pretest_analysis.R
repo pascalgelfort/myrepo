@@ -20,10 +20,11 @@ library(cluster)
 ###############################################################
 ################## Datenaufbereitung ##########################
 ###############################################################
-
+ds_4<-subset(ds_4,ds_4$TIME_RSI<2)
 d<-ds_4[6:483]
-d$ID<-c(1:180)
+d$ID<-c(1:nrow(d))
 describe(d$DE02_01)
+
 
 belief<-d[1:116]
 status<-d[117:232]
@@ -71,7 +72,7 @@ nacount[is.na(nacount)]<-""
 d$nacount<-nacount$allna
 d<-subset(d,d$nacount==0)
 
-# 103 Datens?tze bleiben
+# 98 Datens?tze bleiben
 
 ######191 Jahre Person#############
 d$DE02_01<-ifelse(d$DE02_01==191,NA,d$DE02_01)
@@ -93,8 +94,8 @@ longdatgen<-gather(longdatgen,"target","rating",BE02_01:VI02_58)
 longdatgen<-subset(longdatgen,rating!="NA")
 longdat<-rbind(longdatmask,longdatgen)
 longdat<-longdat[order(longdat$`d$ID`),]
-longdat$targetnames<-rep(targetdiff$target,4*103)
-longdat$dimension<-rep(c(rep("belief",58),rep("status",58),rep("choice",58),rep("visibility",58)),103)
+longdat$targetnames<-rep(targetdiff$target,4*nrow(d))
+longdat$dimension<-rep(c(rep("belief",58),rep("status",58),rep("choice",58),rep("visibility",58)),nrow(d))
 longdat$grammarcond<-ifelse(longdat$`d$FU03`>24,1,0)
 colnames(longdat)<-c("ID","order","age","gender","education","ideology",
                      "job","target","rating","targetnames","dimension","grammarcond")
@@ -114,7 +115,7 @@ longdimbe$status<-longdimst$status
 longdimbe$choice<-longdimch$choice
 longdimbe$visibility<-longdimvis$visibility
 longdim<-longdimbe
-longdim$differentiation<-rep(targetdiff$differentiation,103)
+longdim$differentiation<-rep(targetdiff$differentiation,nrow(d))
 
 #### wide Format ####
 # wide Format mit Ratings pro Target
