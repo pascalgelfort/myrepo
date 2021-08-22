@@ -108,9 +108,9 @@ bechmod <- lmer(belief ~ choice  + (choice|targetnames) + (choice|ID),REML =FALS
 summary(bechmod)
 bevismod <- lmer(belief ~ visibility  + (visibility|targetnames) + (visibility|ID),REML =FALSE,data = longdim)
 summary(bevismod)
-stchmod <- lmer(status ~ choice  + (choice|targetnames) + (choice|ID),REML =FALSE,data = longdim)
+stchmod <- lmer(status ~ choice  + (choice|targetnames),REML =FALSE,data = longdim)
 summary(stchmod)
-ranef(stchmod)
+dotplot(ranef(stchmod))
 stvismod <- lmer(status ~ visibility  + (visibility|targetnames) + (visibility|ID),REML =FALSE,data = longdim)
 summary(stvismod)
 dotplot(ranef(stvismod))
@@ -160,4 +160,5 @@ by(targetfeat$Choice,targetfeat$cluster,sd)
 by(targetfeat$Visibility,targetfeat$cluster,sd)
 
 save(targetfeat,file = "TargetFeatures.Rda") 
+
 

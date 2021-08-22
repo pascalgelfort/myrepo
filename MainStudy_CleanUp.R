@@ -1,4 +1,4 @@
-load(file = "DataStudy29072021.Rda")
+load(file = "DataStudy21082021.Rda")
 
 #### Packages ####
 library(psych)
@@ -16,18 +16,22 @@ library(careless)
 library(car)
 library(dplyr)
 library(multilevel)
+library(papaja)
+library(xlsx)
+library(gdata)
+library(qqplotr)
+library(apaTables)
 ###############################################################
 ################## Datenaufbereitung ##########################
 ###############################################################
 
-a<-a[c(8:274,296)]
-a$ID<-c(1:183)
+a<-a[c(9:275,297)]
+a$ID<-c(1:nrow(a))
 describe(a$DE02_01)
 
 norms<-a[11:126]
 prejudice<-a[127:242]
-rsi<-a$TIME_RSI>2
-table(rsi)
+
 
 #### NAs z?hlen ####
 #pro Bedingung und grammat. Geschlecht
@@ -59,6 +63,35 @@ a<-subset(a,a$nacount==0)
 describe(a$DE05_01)
 hist(a$DE05_01)
 #### RWA SDO MWs ####
+#-9 durch NA ersetzen
+a$RW01_01<-ifelse(a$RW01_01==-9,NA,a$RW01_01)
+a$RW01_02<-ifelse(a$RW01_02==-9,NA,a$RW01_02)
+a$RW01_03<-ifelse(a$RW01_03==-9,NA,a$RW01_03)
+a$RW01_04<-ifelse(a$RW01_04==-9,NA,a$RW01_04)
+a$RW01_05<-ifelse(a$RW01_05==-9,NA,a$RW01_05)
+a$RW01_06<-ifelse(a$RW01_06==-9,NA,a$RW01_06)
+a$RW01_07<-ifelse(a$RW01_07==-9,NA,a$RW01_07)
+a$RW01_08<-ifelse(a$RW01_08==-9,NA,a$RW01_08)
+a$RW01_09<-ifelse(a$RW01_09==-9,NA,a$RW01_09)
+
+a$SD01_01<-ifelse(a$SD01_01==-9,NA,a$SD01_01)
+a$SD01_02<-ifelse(a$SD01_02==-9,NA,a$SD01_02)
+a$SD01_03<-ifelse(a$SD01_03==-9,NA,a$SD01_03)
+a$SD01_04<-ifelse(a$SD01_04==-9,NA,a$SD01_04)
+a$SD01_05<-ifelse(a$SD01_05==-9,NA,a$SD01_05)
+a$SD01_06<-ifelse(a$SD01_06==-9,NA,a$SD01_06)
+a$SD01_07<-ifelse(a$SD01_07==-9,NA,a$SD01_07)
+a$SD01_08<-ifelse(a$SD01_08==-9,NA,a$SD01_08)
+a$SD01_09<-ifelse(a$SD01_09==-9,NA,a$SD01_09)
+a$SD01_10<-ifelse(a$SD01_10==-9,NA,a$SD01_10)
+a$SD01_11<-ifelse(a$SD01_11==-9,NA,a$SD01_11)
+a$SD01_12<-ifelse(a$SD01_12==-9,NA,a$SD01_12)
+a$SD01_13<-ifelse(a$SD01_13==-9,NA,a$SD01_13)
+a$SD01_14<-ifelse(a$SD01_14==-9,NA,a$SD01_14)
+a$SD01_15<-ifelse(a$SD01_15==-9,NA,a$SD01_15)
+a$SD01_16<-ifelse(a$SD01_16==-9,NA,a$SD01_16)
+
+
 a$authaggression<-((a$RW01_01+a$RW01_02+a$RW01_03)/3)
 a$authaggression<-ifelse(a$authaggression==-9,NA,a$authaggression)
 a$authsubmission<-((a$RW01_04+a$RW01_05+a$RW01_06)/3)
@@ -104,6 +137,14 @@ longdat$grammarcond<-ifelse(longdat$`a$FU03` %in% c(2,4),"gen","mask")
 colnames(longdat)<-c("ID","order","age","gender","education","ideology",
                      "job","authaggression","authsubmission","conventionalism","RWA","proSDO","conSDO","SDO","target","rating","targetnames","cond","grammarcond")
 
+####NAs, die als -1, -9 oder 15 gespeichert waren löschen ####
+longdatprej<-subset(longdat,longdat$cond=="prej")
+longdatnorm<-subset(longdat,longdat$cond=="norm")
+longdatnorm$rating<-ifelse(longdatnorm$rating==15,NA,longdatnorm$rating)
+longdatprej$rating<-ifelse(longdatprej$rating<1,NA,longdatprej$rating)
+
+longdat<-rbind(longdatprej,longdatnorm)
+
 #### Long dim ####
 # long Format nach Dimensionen aufgeiteilt
 # pro Dimension eine Spalte
@@ -113,30 +154,22 @@ by(longdim$norm,longdim$targetnames,describe,na.rm=T)
 by(longdim$prej,longdim$targetnames,describe,na.rm=T)
 
 
-#### Clean Up für Person-population correlation/Item Total Correlation ####
-#Für Normen
-#58 Zeilen für je ein Target, Spalten pro ID
-ppcdatnorm<-longdim[,c(1,16,18)]
-ppcdatnorm<-subset(ppcdatnorm,ppcdatnorm$norm!="NA")
-ppcdatnorm<-pivot_wider(ppcdatnorm,id_cols = targetnames,names_from = ID,values_from = norm)
-row.names(ppcdatnorm)<-targetdiff$target
-ppcdatnorm<-ppcdatnorm[,-1]
-#Für Vorurteile
-ppcdatprej<-longdim[,c(1,16,19)]
-ppcdatprej<-subset(ppcdatprej,ppcdatprej$prej!="NA")
-ppcdatprej<-pivot_wider(ppcdatprej,id_cols = targetnames,names_from = ID,values_from = prej)
-ppcdatprej<-ppcdatprej[,-1]
-row.names(ppcdatprej)<-targetdiff$target
+widedat<-pivot_wider(
+  longdim,
+  id_cols = ID,
+  names_from = targetnames,
+  names_prefix = "",
+  names_sep = "_",
+  names_glue = NULL,
+  names_sort = FALSE,
+  names_repair = "check_unique",
+  values_from = c(norm,prej),
+  values_fill = NULL,
+  values_fn = NULL
+)
+widedatdemographics<-longdat[,c(1,3,4,5,6,11,14)]
+widedatdemographics<-unique(widedatdemographics, by=ID)
+widedat<-cbind(widedat$ID,widedatdemographics[,2:7],widedat[2:117])
 
 
-normpersonpopulation<-item.total(ppcdatnorm)
-plot(normpersonpopulation$Item.Total)
-plot(density(normpersonpopulation$Item.Total,na.rm = T))
-
-
-median(normpersonpopulation$Item.Total,na.rm=T)
-median(prejpersonpopulation$Item.Total,na.rm=T)
-prejpersonpopulation<-item.total(ppcdatprej)
-hist(prejpersonpopulation$Item.Total)
-plot(density(prejpersonpopulation$Item.Total))
 
